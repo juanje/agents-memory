@@ -1,0 +1,4 @@
+hooks/.state/
+hooks/.debug.log
+__pycache__/
+*.pyc
