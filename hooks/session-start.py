@@ -228,6 +228,11 @@ def main() -> None:
     if not project_dir:
         project_dir = create_project(project_name, workspace_dir)
 
+    # Projects with .skip have their own memory system — don't inject context
+    if (project_dir / ".skip").exists():
+        print(json.dumps({}))
+        return
+
     # Compose and return context
     context = compose_context(project_dir, project_name)
 
