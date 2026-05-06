@@ -26,7 +26,9 @@ Derive the project name from the current workspace directory name.
    (append if exists). Sections: Decisions, Corrections, Learnings, Open
    threads. Skip empty sections.
 2. **Last session** → `~/agents-memory/projects/<project>/last-session.md`
-   (overwrite). 3-5 lines of prose: what was done, key outcome.
+   (overwrite). 3-5 lines of prose summarizing the most recent day's work.
+   If today's log already has content from earlier saves, read it first and
+   write a combined summary — not just what was processed in this invocation.
 3. **Open threads** → `~/agents-memory/projects/<project>/open-threads.md`
    (overwrite with current state — merge new threads, remove resolved ones).
 4. **Logs index** → `~/agents-memory/projects/<project>/logs/index.md`

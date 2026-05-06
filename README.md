@@ -9,8 +9,10 @@ When you open a project, the agent knows what it is, what you did last time, you
 ```
 ~/agents-memory/
 ├── hooks/session-start.py    → Fires at session start, injects context
+├── hooks/auto-save.py        → Fires on session end / every N responses
 ├── commands/save.md          → /save — persist session work
 ├── commands/consolidate.md   → /consolidate — maintenance cycles
+├── config.json               → User configuration (save threshold, etc.)
 ├── global/preferences.md     → Your universal preferences
 ├── stacks/<lang>/            → Per-language standards
 ├── teams/<team>/             → Team conventions
@@ -32,6 +34,23 @@ When you open a project, the agent knows what it is, what you did last time, you
 | Session summary | `projects/<name>/last-session.md` (overwrite) |
 
 It also updates the logs index and commits the changes to git. Only meaningful content gets saved — routine operations, tool calls, and file reads are skipped.
+
+**Auto-save (safety net):** Even if you forget to `/save`, the auto-save hook captures your work automatically:
+
+| Trigger | When | Behavior |
+|---------|------|----------|
+| Session end | Session closes (`sessionEnd` / `SessionEnd`) | Always saves |
+| Pre-compaction | Context window fills up (`preCompact` / `PreCompact`) | Always saves |
+| Periodic | After every N agent responses (`afterAgentResponse` / `Stop`) | Only when threshold reached (default: 10) |
+
+The auto-save reads the conversation transcript, filters out noise (tool calls, file reads), and launches a headless agent in the background to extract memory — using the same instructions as `/save`. It's lower fidelity than a manual `/save` (no in-session context), but captures something vs. nothing.
+
+The periodic threshold is configurable in `~/agents-memory/config.json`:
+```json
+{"auto_save_threshold": 10}
+```
+
+Projects with a `.skip` file in their memory directory are excluded from auto-save (useful for projects that have their own memory system).
 
 **Maintenance:** Run `/consolidate` to normalize files, cross-reference projects, and promote recurring patterns. Auto-detects which cycle is due:
 
@@ -60,25 +79,38 @@ Set up agents-memory for me. Follow these steps exactly:
 
 1. Verify python3 is available (version 3.9+).
 
-2. Configure the sessionStart hook:
+2. Configure hooks:
    - For Cursor: Add this to ~/.cursor/hooks.json (create if doesn't exist):
      {
        "version": 1,
        "hooks": {
          "sessionStart": [
            {"command": "python3 ~/agents-memory/hooks/session-start.py"}
+         ],
+         "afterAgentResponse": [
+           {"command": "python3 ~/agents-memory/hooks/auto-save.py", "timeout": 30}
+         ],
+         "preCompact": [
+           {"command": "python3 ~/agents-memory/hooks/auto-save.py", "timeout": 30}
+         ],
+         "sessionEnd": [
+           {"command": "python3 ~/agents-memory/hooks/auto-save.py", "timeout": 30}
          ]
        }
      }
-   - For claude-code: Add this to ~/.claude/settings.json under "hooks":
-     "SessionStart": [
-       {
-         "matcher": "startup|resume",
-         "hooks": [
-           {"type": "command", "command": "python3 /FULL/PATH/TO/agents-memory/hooks/session-start.py"}
-         ]
-       }
-     ]
+   - For claude-code: Add these to ~/.claude/settings.json under "hooks":
+     "SessionStart": [{"matcher": "startup|resume", "hooks": [
+       {"type": "command", "command": "python3 /FULL/PATH/TO/agents-memory/hooks/session-start.py"}
+     ]}],
+     "Stop": [{"matcher": "", "hooks": [
+       {"type": "command", "command": "python3 /FULL/PATH/TO/agents-memory/hooks/auto-save.py"}
+     ]}],
+     "PreCompact": [{"matcher": "", "hooks": [
+       {"type": "command", "command": "python3 /FULL/PATH/TO/agents-memory/hooks/auto-save.py"}
+     ]}],
+     "SessionEnd": [{"matcher": "", "hooks": [
+       {"type": "command", "command": "python3 /FULL/PATH/TO/agents-memory/hooks/auto-save.py", "timeout": 10}
+     ]}]
      IMPORTANT: Use the full absolute path (not ~) for claude-code.
 
 3. Symlink commands globally:
@@ -104,7 +136,9 @@ If you prefer to set it up yourself:
    git clone https://github.com/juanje/agents-memory ~/agents-memory
    ```
 
-2. Configure hooks (see setup prompt above for the exact JSON).
+2. Configure hooks — sessionStart for context injection, plus auto-save
+   hooks for afterAgentResponse, preCompact, and sessionEnd (see setup
+   prompt above for the exact JSON for both Cursor and claude-code).
 
 3. Symlink commands:
    ```bash
