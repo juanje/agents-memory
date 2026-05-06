@@ -8,8 +8,9 @@ When you open a project, the agent knows what it is, what you did last time, you
 
 ```
 ~/agents-memory/
-├── hooks/session-start.py   → Fires at session start, injects context
-├── commands/save.md          → /save command to persist session work
+├── hooks/session-start.py    → Fires at session start, injects context
+├── commands/save.md          → /save — persist session work
+├── commands/consolidate.md   → /consolidate — maintenance cycles
 ├── global/preferences.md     → Your universal preferences
 ├── stacks/<lang>/            → Per-language standards
 ├── teams/<team>/             → Team conventions
@@ -21,6 +22,16 @@ When you open a project, the agent knows what it is, what you did last time, you
 **During work:** If you correct the agent about your preferences or standards, it updates the memory files immediately.
 
 **End of session:** Run `/save` to persist decisions, learnings, and open threads for next time.
+
+**Maintenance:** Run `/consolidate` to normalize files, cross-reference projects, and promote recurring patterns. Auto-detects which cycle is due:
+
+| Cycle | When | What it does |
+|-------|------|-------------|
+| Daily | New day since last run | Normalize formats, trim oversized indexes, validate open threads, cross-reference projects |
+| Weekly | >7 days | Cross-project pattern detection, promote learnings to stack/team level, flag stale projects |
+| Monthly | >28 days | Archive old logs with summaries, compact inactive projects, deep cross-scope generalization |
+
+Each cycle includes all previous ones. Safe to run multiple times. Use `/consolidate daily` (or `weekly`, `monthly`) to force a specific cycle.
 
 **Over time:** Memory accumulates across sessions. Knowledge that recurs across projects gets promoted to stack or global level.
 
@@ -60,9 +71,13 @@ Set up agents-memory for me. Follow these steps exactly:
      ]
      IMPORTANT: Use the full absolute path (not ~) for claude-code.
 
-3. Symlink the /save command globally:
-   - Cursor: ln -s ~/agents-memory/commands/save.md ~/.cursor/commands/save.md
-   - claude-code: ln -s ~/agents-memory/commands/save.md ~/.claude/commands/save.md
+3. Symlink commands globally:
+   - Cursor:
+     ln -s ~/agents-memory/commands/save.md ~/.cursor/commands/save.md
+     ln -s ~/agents-memory/commands/consolidate.md ~/.cursor/commands/consolidate.md
+   - claude-code:
+     ln -s ~/agents-memory/commands/save.md ~/.claude/commands/save.md
+     ln -s ~/agents-memory/commands/consolidate.md ~/.claude/commands/consolidate.md
 
 4. Verify: Start a new conversation in any project. You should see
    project context loaded automatically at the beginning.
@@ -81,10 +96,12 @@ If you prefer to set it up yourself:
 
 2. Configure hooks (see setup prompt above for the exact JSON).
 
-3. Symlink the command:
+3. Symlink commands:
    ```bash
    ln -s ~/agents-memory/commands/save.md ~/.cursor/commands/save.md
+   ln -s ~/agents-memory/commands/consolidate.md ~/.cursor/commands/consolidate.md
    ln -s ~/agents-memory/commands/save.md ~/.claude/commands/save.md
+   ln -s ~/agents-memory/commands/consolidate.md ~/.claude/commands/consolidate.md
    ```
 
 4. Start a new conversation — context should load automatically.
