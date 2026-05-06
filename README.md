@@ -135,6 +135,10 @@ composes context from all relevant scopes automatically.
 - **python3 ≥ 3.9** (stdlib only, no external dependencies)
 - **Cursor** or **claude-code** (for hook support)
 
+## Background
+
+This system is based on the principles and experience of [Agentic Buddy](https://github.com/juanje/agentic-buddy) — a file-based memory system for AI agents that uses Hebbian-inspired learning cycles, progressive disclosure, and cross-scope knowledge promotion. agents-memory adapts that architecture for code projects: multiple projects, shared stack standards, team conventions, and portable across editors.
+
 ## License
 
 MIT
