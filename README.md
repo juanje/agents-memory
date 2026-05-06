@@ -21,7 +21,17 @@ When you open a project, the agent knows what it is, what you did last time, you
 
 **During work:** If you correct the agent about your preferences or standards, it updates the memory files immediately.
 
-**End of session:** Run `/save` to persist decisions, learnings, and open threads for next time.
+**End of session:** Run `/save` to persist what matters from the conversation:
+
+| What it extracts | Where it writes |
+|-----------------|----------------|
+| Decisions (with reasoning) | `projects/<name>/logs/YYYY-MM-DD.md` (append) |
+| User corrections | `projects/<name>/logs/YYYY-MM-DD.md` (append) |
+| Learnings and patterns | `projects/<name>/logs/YYYY-MM-DD.md` (append) |
+| Open threads | `projects/<name>/open-threads.md` (overwrite) |
+| Session summary | `projects/<name>/last-session.md` (overwrite) |
+
+It also updates the logs index and commits the changes to git. Only meaningful content gets saved — routine operations, tool calls, and file reads are skipped.
 
 **Maintenance:** Run `/consolidate` to normalize files, cross-reference projects, and promote recurring patterns. Auto-detects which cycle is due:
 
