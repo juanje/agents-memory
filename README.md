@@ -168,6 +168,11 @@ composes context from all relevant scopes automatically.
 
 - **python3 ≥ 3.9** (stdlib only, no external dependencies)
 - **Cursor** or **claude-code** (for hook support)
+- **Platform CLI** (required for auto-save):
+  - Cursor: `agent` CLI — `curl https://cursor.com/install -fsS | bash`
+  - claude-code: `claude` CLI — installed with `npm install -g @anthropic-ai/claude-code`
+
+The sessionStart hook and `/save` command work without the CLI. The auto-save hook needs it to launch a headless extraction agent in the background.
 
 ## Background
 
