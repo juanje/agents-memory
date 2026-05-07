@@ -4,6 +4,14 @@ Persistent, cross-session memory for AI coding agents. Works with Cursor and cla
 
 When you open a project, the agent knows what it is, what you did last time, your standards for that stack, and how your team works — without you repeating anything.
 
+## Table of contents
+
+- [How it works](#how-it-works)
+- [Setup](#setup)
+- [Memory structure](#memory-structure)
+- [Requirements](#requirements)
+- [Background](#background)
+
 ## How it works
 
 ```
