@@ -70,6 +70,8 @@ Projects with a `.skip` file in their memory directory are excluded from auto-sa
 
 Each cycle includes all previous ones. Safe to run multiple times. Use `/consolidate daily` (or `weekly`, `monthly`) to force a specific cycle.
 
+**Auto-consolidation:** You don't need to remember to run `/consolidate` manually. The sessionStart hook checks when consolidation last ran. If a cycle is overdue, it launches `/consolidate` in the background at the start of your next session — while you work, the system normalizes and cross-references behind the scenes. This runs at session *start* (not end), so there's no collision with auto-save which runs at session *end*.
+
 **Over time:** Memory accumulates across sessions. Knowledge that recurs across projects gets promoted to stack or global level.
 
 ## Setup
