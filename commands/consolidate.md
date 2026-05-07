@@ -12,6 +12,11 @@ Usage:
 Can be run multiple times in a day — only acts on what needs attention.
 Follow the formats in ~/agents-memory/formats.md for any files modified.
 
+**Idempotency rule:** Do not rewrite existing content that already follows
+the formats. Only add, remove, or fix content that is structurally wrong
+(missing fields, wrong format, stale data). Rephrasing correct content is
+not a valid change. If a file is already correct, leave it untouched.
+
 ## What to read per cycle
 
 | Cycle | Read | Don't read |

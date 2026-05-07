@@ -10,7 +10,9 @@ Output: JSON to stdout with {"additional_context": "..."} or {}.
 
 import json
 import os
+import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 
@@ -93,12 +95,12 @@ def create_project(project_name: str, workspace_dir: Path) -> Path:
     if stack:
         index_content += f"- Stack: {stack} [auto-detected — confirm with user]\n"
     index_content += (
-        f"- Team: [ask user]\n"
-        f"- Last session: (new project)\n\n"
-        f"Files:\n"
-        f"- last-session.md — summary of the most recent session\n"
-        f"- open-threads.md — unfinished work, pending questions\n"
-        f"- logs/index.md — session history\n"
+        "- Team: [ask user]\n"
+        "- Last session: (new project)\n\n"
+        "Files:\n"
+        "- last-session.md — summary of the most recent session\n"
+        "- open-threads.md — unfinished work, pending questions\n"
+        "- logs/index.md — session history\n"
     )
 
     (project_dir / "index.md").write_text(index_content)
@@ -158,8 +160,8 @@ def compose_context(project_dir: Path, project_name: str) -> str:
     else:
         # Remove the stack line if no stack detected
         rules = "\n".join(
-            l for l in rules.splitlines()
-            if "{stack}" not in l
+            line for line in rules.splitlines()
+            if "{stack}" not in line
         )
 
     parts = [rules, "---\n"]
@@ -203,6 +205,60 @@ def compose_context(project_dir: Path, project_name: str) -> str:
     return "\n".join(parts)
 
 
+def check_consolidation_due() -> str | None:
+    """Return cycle name if consolidation is overdue, else None."""
+    state_file = MEMORY_DIR / "hooks" / ".state" / "consolidate.json"
+    if not state_file.exists():
+        return "daily"
+    try:
+        state = json.loads(state_file.read_text())
+    except (json.JSONDecodeError, IOError):
+        return "daily"
+    last_run_str = state.get("last_run", "")
+    if not last_run_str:
+        return "daily"
+    try:
+        last_run = date.fromisoformat(last_run_str)
+    except ValueError:
+        return "daily"
+    days = (date.today() - last_run).days
+    if days >= 28:
+        return "monthly"
+    if days >= 7:
+        return "weekly"
+    if days >= 1:
+        return "daily"
+    return None
+
+
+def launch_consolidation(cycle: str) -> None:
+    """Launch /consolidate in background via platform CLI."""
+    consolidate_cmd = read_file(MEMORY_DIR / "commands" / "consolidate.md")
+    if not consolidate_cmd:
+        return
+    prompt = (
+        f"Run a {cycle} consolidation on the memory system at {MEMORY_DIR}/. "
+        f"Follow these instructions:\n\n{consolidate_cmd}"
+    )
+    if os.environ.get("CURSOR_PROJECT_DIR"):
+        cli = "agent"
+        cmd = [cli, "-p", prompt, "--workspace", str(MEMORY_DIR), "--force"]
+    else:
+        cli = "claude"
+        cmd = [cli, "-p", prompt, "--allowedTools",
+               "Read", "Write", "Edit", "Bash(git *)"]
+    env = os.environ.copy()
+    env["AGENT_MEMORY_SAVE"] = "1"
+    try:
+        subprocess.Popen(
+            cmd, env=env, cwd=str(MEMORY_DIR),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except (FileNotFoundError, OSError):
+        pass
+
+
 def main() -> None:
     # Read hook input from stdin
     try:
@@ -235,6 +291,11 @@ def main() -> None:
 
     # Compose and return context
     context = compose_context(project_dir, project_name)
+
+    # Launch background consolidation if overdue
+    cycle = check_consolidation_due()
+    if cycle:
+        launch_consolidation(cycle)
 
     # Output format differs by platform
     if os.environ.get("CURSOR_PROJECT_DIR"):
