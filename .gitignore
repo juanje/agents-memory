@@ -1,4 +1,6 @@
-hooks/.state/
-hooks/.debug.log
+# Staging area for consolidation pipeline (ephemeral manifests)
+.staging/
+
+# Python
 __pycache__/
 *.pyc

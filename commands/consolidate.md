@@ -17,6 +17,25 @@ the formats. Only add, remove, or fix content that is structurally wrong
 (missing fields, wrong format, stale data). Rephrasing correct content is
 not a valid change. If a file is already correct, leave it untouched.
 
+## Architecture: staging-based pipeline
+
+All consolidation follows this pipeline. Parallelism is only in reading
+and analysis — never in writing or committing.
+
+```
+ASSESS → ANALYZE (per project) → PLAN → EXECUTE → COMMIT → CLEAN UP
+```
+
+- **Analyze** phase produces manifests in `~/agents-memory/.staging/`.
+- **Execute** phase is the only step that modifies project memory files.
+- **Commit** is always a single `git add -A && git commit` at the end.
+- `.staging/` is cleaned after commit.
+
+**Subagent rules (when used):**
+- Subagents may ONLY write to `.staging/`. Never to project files.
+- Subagents have NO git permissions.
+- Subagents read: the project's files + `formats.md`. Nothing else.
+
 ## What to read per cycle
 
 | Cycle | Read | Don't read |
@@ -28,20 +47,18 @@ not a valid change. If a file is already correct, leave it untouched.
 Start with the lightest reads (indexes, info files). Only open full logs
 when the index shows relevant activity. Don't read archived content.
 
-## Parallelization with subagents
+## Subagent strategy
 
-- **Daily (5+ projects):** Launch one background subagent per project for
-  normalization and trimming. Main agent handles cross-references after.
-- **Weekly (5+ projects):** Same — subagent per project for log review.
-  Main agent handles cross-project pattern detection.
-- **Monthly (3+ projects):** Launch one subagent per project for
-  archive/compact. Main agent handles deep cross-scope generalization
-  with the results.
+| Cycle | Projects | Strategy |
+|-------|----------|----------|
+| Daily | ≤5 | Single agent — sequential Analyze+Plan+Execute |
+| Daily | 6+ | Subagents for Analyze, main agent for Plan+Execute |
+| Weekly | any | Subagents for Analyze |
+| Monthly | any | Subagents for Analyze + archive assessment |
 
-Each subagent receives: the project path, formats.md, and specific
-instructions for its cycle. It returns a brief summary of what it did.
-The main agent synthesizes. **Subagents must NOT run git commands** —
-the main agent does a single commit after all work is done.
+When running as a single agent (daily ≤5), skip manifest files — analyze
+in memory and proceed directly to Plan+Execute. The staging pipeline is
+for coordination when subagents are involved.
 
 ## Cycle detection
 
@@ -52,81 +69,181 @@ run daily. Otherwise check `last_run`:
 - >7 days → weekly (includes daily)
 - >28 days → monthly (includes weekly + daily)
 
-## Daily cycle
+---
 
-1. **Normalize formats:** Read all projects' files (last-session.md,
-   open-threads.md, logs/, index.md). Compare against
-   ~/agents-memory/formats.md. Fix any deviations (headers, structure,
-   empty states).
+## Phase 1: ASSESS
 
-2. **Trim oversized indexes:** Check each project's index.md. If >80
-   lines, extract the heaviest section into a separate file (context.md,
-   decisions.md) and replace with a pointer. Keep index.md as a lean hub.
+1. Read `hooks/.state/consolidate.json` → determine cycle.
+2. List `projects/` → identify active projects (have logs from this cycle's
+   window).
+3. Decide strategy (single agent vs subagents) per table above.
 
-3. **Update projects/index.md:** Ensure every project has a current
-   one-line description (not "(new project)"). Derive from the project's
-   index.md content.
+## Phase 2: ANALYZE (per project)
 
-4. **Cross-reference:** If yesterday's sessions mentioned other projects
-   in memory, ensure "## Related projects" sections exist with pointers.
+For each active project, produce an analysis. When using subagents, each
+writes to `.staging/<project>-analysis.md`. When single-agent, hold the
+analysis in working memory.
 
-5. **Validate open-threads:** Read each project's open-threads.md. If a
-   session log resolved a thread (explicitly or implicitly), remove it.
+**What to analyze:**
 
-6. **Do NOT commit yet** — all changes are committed once at the end.
+- Read the project's `index.md`, `last-session.md`, `open-threads.md`.
+- Read `logs/index.md` to identify recent sessions.
+- Read relevant session logs (per cycle scope).
+- Compare all files against `formats.md`.
 
-## Weekly cycle (includes daily first)
+**Analysis manifest format** (`.staging/<project>-analysis.md`):
 
-7. **Cross-project patterns:** Read all session logs from the week across
-   projects. If the same decision or pattern appears in 2+ projects of the
-   same stack → promote to stacks/<stack>/index.md (or standards.md/
-   patterns.md if the index is getting long).
+```markdown
+# Analysis: <project-name>
 
-8. **Stack enrichment:** Add learnings that generalize (not
-   project-specific) to the relevant stack file.
+## Format issues
+- <file>: <what's wrong per formats.md>
 
-9. **Team updates:** If new conventions were established this week across
-   projects of the same team, update teams/<team>/index.md.
+## Stale threads
+- <thread summary> — resolved in <log date> (evidence: <brief quote>)
 
-10. **Flag stale projects:** Projects with no sessions in >30 days →
-    note in the weekly commit message (don't auto-archive yet).
+## Cross-references detected
+- References <other-project> (<reason>)
 
-11. **Do NOT commit yet** — all changes are committed once at the end.
+## Index update
+- Current description: "<current>"
+- Suggested: "<better one-line description>" (or "OK" if current is fine)
 
-## Monthly cycle (includes weekly first)
+## Hub trimming
+- index.md is <N> lines (threshold: 80). Action: <none | extract to context.md>
 
-12. **Archive old logs:** For each project, move logs >30 days old to
-    `projects/<name>/logs/archive/YYYY-MM/`. Create a monthly summary
-    file in the archive directory.
+## Patterns (weekly+)
+- "<pattern>" appears N times → candidate for <scope>
 
-13. **Deep generalization:** Read all stacks — any patterns that should
-    be global? Read all projects — any that should share a convention
-    not yet captured?
+## Archive candidates (monthly)
+- logs/<date>.md — older than 30 days, candidate for archive
+```
 
-14. **Compact inactive projects:** Projects with no sessions in >60 days
-    → trim their context to essentials (keep index.md, clear last-session
-    and open-threads to empty state).
+Omit empty sections. Only include sections with actionable findings.
 
-15. **Prune stale promotions:** If a pattern was promoted to stack/global
-    but hasn't been confirmed by continued use (no references in logs for
-    30+ days), flag it for review.
+**Subagent prompt template:**
 
-16. **Do NOT commit yet** — all changes are committed once at the end.
+> Read the project memory at ~/agents-memory/projects/<name>/ and
+> ~/agents-memory/formats.md. Analyze the project's files for: format
+> deviations, stale open threads (check against recent logs), cross-project
+> references, index description accuracy, and hub size. Write your findings
+> to ~/agents-memory/.staging/<name>-analysis.md following the analysis
+> manifest format. Omit sections with no findings. Return a one-line
+> summary.
 
-## After running
+## Phase 3: PLAN
 
-1. Update the state file:
+Read all analysis results (from `.staging/` or working memory). Produce a
+consolidated plan. When using subagents, write to `.staging/_plan.md`. When
+single-agent, hold in working memory.
+
+**Plan format** (`.staging/_plan.md`):
+
+```markdown
+# Consolidation plan (<cycle> — YYYY-MM-DD)
+
+## Normalize
+1. <project>/<file> — <what to fix>
+
+## Remove stale threads
+1. <project>/open-threads.md — remove "<thread>" (resolved <date>)
+
+## Cross-references
+1. <project>/index.md — add <other-project> to Related projects
+
+## Update descriptions
+1. projects/index.md — <project>: "<new description>"
+
+## Hub trimming
+1. <project>/index.md — extract <section> to <project>/context.md
+
+## Promotions (weekly+)
+1. "<pattern>" → stacks/<stack>/<file>.md
+
+## Archive (monthly)
+1. <project>/logs/<date>.md → <project>/logs/archive/YYYY-MM/
+
+## No action needed
+- <project>: all files correct
+```
+
+**Decision rules:**
+- Only include actions where something is actually wrong or missing.
+- "No action needed" confirms you checked — not that you skipped.
+- Cross-references: only add genuinely related projects (shared data,
+  dependency, migration context). Not every project mentioned in passing.
+- Promotions require the pattern to appear in 2+ projects of the same
+  stack. A single occurrence is project-level, not stack-level.
+
+## Phase 4: EXECUTE
+
+Apply the plan. This is the only phase that modifies project memory files.
+
+**Rules:**
+- Follow the plan literally. Don't add changes not in the plan.
+- If a file is already correct (plan says normalize but the file matches
+  formats.md), skip it — don't touch.
+- When modifying files, preserve existing content that isn't flagged in
+  the plan. Don't rewrite surrounding prose.
+- Do NOT run git commands during this phase.
+
+**Execution order:**
+1. Normalize (format fixes)
+2. Remove stale threads
+3. Cross-references
+4. Update descriptions (projects/index.md)
+5. Hub trimming (extract to separate file + pointer)
+6. Promotions (weekly+)
+7. Archive (monthly)
+
+## Phase 5: COMMIT + CLEAN UP
+
+After all changes are applied:
+
+1. Update state:
    ```
    ~/agents-memory/hooks/.state/consolidate.json
    {"last_run": "YYYY-MM-DD", "last_cycle": "daily|weekly|monthly"}
    ```
 
-2. **Single commit for all changes:**
-   ```
+2. Single commit:
+   ```bash
    cd ~/agents-memory && git add -A && git commit -m "consolidate(<cycle>): YYYY-MM-DD"
    ```
-   Do NOT commit during individual steps or per-project subagents. One
-   commit at the end — this is the only git commit in the entire run.
+   This is the ONLY git command in the entire run. No intermediate commits.
+   No per-project commits. One commit.
 
-3. Report what was done: "Consolidation (daily): normalized 3 files, trimmed
-   projectX index, added 1 cross-reference. Committed."
+3. Clean up staging:
+   ```bash
+   rm -rf ~/agents-memory/.staging/
+   ```
+
+4. Report:
+   ```
+   Consolidation (<cycle>): <brief summary of what changed>. Committed.
+   ```
+
+---
+
+## Daily cycle — what to check
+
+1. **Normalize formats:** Compare project files against formats.md.
+2. **Trim oversized indexes:** index.md >80 lines → extract to context.md.
+3. **Update projects/index.md:** Ensure current one-line descriptions.
+4. **Cross-reference:** Sessions mentioning other projects → Related sections.
+5. **Validate open-threads:** Remove threads resolved in recent logs.
+
+## Weekly cycle (includes daily)
+
+6. **Cross-project patterns:** Same decision in 2+ projects of same stack
+   → promote to stacks/<stack>/index.md.
+7. **Stack enrichment:** Generalizable learnings → stack files.
+8. **Team updates:** New conventions across a team → teams/<team>/index.md.
+9. **Flag stale projects:** No sessions in >30 days → note in commit message.
+
+## Monthly cycle (includes weekly)
+
+10. **Archive old logs:** logs >30 days → `logs/archive/YYYY-MM/` with summary.
+11. **Deep generalization:** Stack patterns that should be global?
+12. **Compact inactive projects:** No sessions in >60 days → trim to essentials.
+13. **Prune stale promotions:** Promoted patterns with no recent references → flag.
