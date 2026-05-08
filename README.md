@@ -43,6 +43,36 @@ When you open a project, the agent knows what it is, what you did last time, you
 
 It also updates the logs index and commits the changes to git. Only meaningful content gets saved — routine operations, tool calls, and file reads are skipped.
 
+Example — after running `/save`, your project memory might look like:
+
+```markdown
+# Last session — 2026-05-08
+
+Refactored the upload pipeline to use pre-computed env vars from the CLI
+builder. Fixed path composition when the registry namespace is empty.
+MR reviewed and merge-ready; docs update pending as final step.
+```
+
+```markdown
+# 2026-05-07
+
+## Decisions
+
+- Simplified migration from 5 stages to 2 phases — internal tool,
+  pipeline CI is the gating mechanism, no need for gradual rollout.
+- Builder integrated as @property (read-only) instead of model_validator
+  (which mutates state). Cleaner and avoids side effects.
+
+## Learnings
+
+- Disk image outputs have a format extension; container outputs don't.
+  The build result must handle both cases explicitly.
+
+## Open threads
+
+- Phase 2 end-to-end test with both MRs together.
+```
+
 **Auto-save (safety net):** Even if you forget to `/save`, the auto-save hook captures your work automatically:
 
 | Trigger | When | Behavior |
@@ -57,6 +87,8 @@ The periodic threshold is configurable in `~/agents-memory/config.json`:
 ```json
 {"auto_save_threshold": 10}
 ```
+
+Lower values save more often (safer against context loss, but uses more tokens). Higher values save less frequently (cheaper, but more risk of losing work if a session ends unexpectedly). The default of 10 is a reasonable balance.
 
 Projects with a `.skip` file in their memory directory are excluded from auto-save (useful for projects that have their own memory system).
 
@@ -87,9 +119,12 @@ Copy the section below and paste it into a Cursor or claude-code conversation. T
 ```
 Set up agents-memory for me. Follow these steps exactly:
 
-1. Verify python3 is available (version 3.9+).
+1. Clone the repo (if not already present):
+   git clone https://github.com/juanje/agents-memory ~/agents-memory
 
-2. Configure hooks:
+2. Verify python3 is available (version 3.9+).
+
+3. Configure hooks:
    - For Cursor: Add this to ~/.cursor/hooks.json (create if doesn't exist):
      {
        "version": 1,
@@ -123,7 +158,7 @@ Set up agents-memory for me. Follow these steps exactly:
      ]}]
      IMPORTANT: Use the full absolute path (not ~) for claude-code.
 
-3. Symlink commands globally:
+4. Symlink commands globally:
    - Cursor:
      ln -s ~/agents-memory/commands/save.md ~/.cursor/commands/save.md
      ln -s ~/agents-memory/commands/consolidate.md ~/.cursor/commands/consolidate.md
@@ -131,9 +166,11 @@ Set up agents-memory for me. Follow these steps exactly:
      ln -s ~/agents-memory/commands/save.md ~/.claude/commands/save.md
      ln -s ~/agents-memory/commands/consolidate.md ~/.claude/commands/consolidate.md
 
-4. Verify: Start a new conversation in any project. You should see
+5. Verify: Start a new conversation in any project. You should see
    project context loaded automatically at the beginning.
 ```
+
+> **Note:** The default location is `~/agents-memory/`. If you clone elsewhere, set the `AGENT_MEMORY_DIR` environment variable and adjust the hook paths in the JSON configs accordingly.
 
 ---
 
