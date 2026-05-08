@@ -40,7 +40,8 @@ when the index shows relevant activity. Don't read archived content.
 
 Each subagent receives: the project path, formats.md, and specific
 instructions for its cycle. It returns a brief summary of what it did.
-The main agent synthesizes.
+The main agent synthesizes. **Subagents must NOT run git commands** —
+the main agent does a single commit after all work is done.
 
 ## Cycle detection
 
@@ -72,7 +73,7 @@ run daily. Otherwise check `last_run`:
 5. **Validate open-threads:** Read each project's open-threads.md. If a
    session log resolved a thread (explicitly or implicitly), remove it.
 
-6. **Git commit:** `cd ~/agents-memory && git add -A && git commit -m "daily: YYYY-MM-DD"`
+6. **Do NOT commit yet** — all changes are committed once at the end.
 
 ## Weekly cycle (includes daily first)
 
@@ -90,7 +91,7 @@ run daily. Otherwise check `last_run`:
 10. **Flag stale projects:** Projects with no sessions in >30 days →
     note in the weekly commit message (don't auto-archive yet).
 
-11. **Git commit:** `cd ~/agents-memory && git add -A && git commit -m "weekly: YYYY-WNN"`
+11. **Do NOT commit yet** — all changes are committed once at the end.
 
 ## Monthly cycle (includes weekly first)
 
@@ -110,15 +111,22 @@ run daily. Otherwise check `last_run`:
     but hasn't been confirmed by continued use (no references in logs for
     30+ days), flag it for review.
 
-16. **Git commit:** `cd ~/agents-memory && git add -A && git commit -m "monthly: YYYY-MM"`
+16. **Do NOT commit yet** — all changes are committed once at the end.
 
 ## After running
 
-Update the state file:
-```
-~/agents-memory/hooks/.state/consolidate.json
-{"last_run": "YYYY-MM-DD", "last_cycle": "daily|weekly|monthly"}
-```
+1. Update the state file:
+   ```
+   ~/agents-memory/hooks/.state/consolidate.json
+   {"last_run": "YYYY-MM-DD", "last_cycle": "daily|weekly|monthly"}
+   ```
 
-Report what was done: "Consolidation (daily): normalized 3 files, trimmed
-pac-jobs index, added 1 cross-reference. Committed."
+2. **Single commit for all changes:**
+   ```
+   cd ~/agents-memory && git add -A && git commit -m "consolidate(<cycle>): YYYY-MM-DD"
+   ```
+   Do NOT commit during individual steps or per-project subagents. One
+   commit at the end — this is the only git commit in the entire run.
+
+3. Report what was done: "Consolidation (daily): normalized 3 files, trimmed
+   projectX index, added 1 cross-reference. Committed."
