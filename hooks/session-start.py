@@ -107,12 +107,9 @@ def create_project(project_name: str, workspace_dir: Path) -> Path:
     (project_dir / "last-session.md").write_text(
         "# Last session\n\n(No sessions recorded yet. Use /save when done.)\n"
     )
-    (project_dir / "open-threads.md").write_text(
-        "# Open threads\n\n(None yet.)\n"
-    )
+    (project_dir / "open-threads.md").write_text("# Open threads\n\n(None yet.)\n")
     (project_dir / "logs" / "index.md").write_text(
-        f"# Session logs — {project_name}\n\n"
-        f"| Date | Summary |\n|---|---|\n"
+        f"# Session logs — {project_name}\n\n| Date | Summary |\n|---|---|\n"
     )
 
     # Update projects/index.md
@@ -159,10 +156,7 @@ def compose_context(project_dir: Path, project_name: str) -> str:
         rules = rules.replace("{stack}", stack)
     else:
         # Remove the stack line if no stack detected
-        rules = "\n".join(
-            line for line in rules.splitlines()
-            if "{stack}" not in line
-        )
+        rules = "\n".join(line for line in rules.splitlines() if "{stack}" not in line)
 
     parts = [rules, "---\n"]
 
@@ -245,14 +239,25 @@ def launch_consolidation(cycle: str) -> None:
         cmd = [cli, "-p", prompt, "--workspace", str(MEMORY_DIR), "--force"]
     else:
         cli = "claude"
-        cmd = [cli, "-p", prompt, "--allowedTools",
-               "Read", "Write", "Edit", "Bash(git *)"]
+        cmd = [
+            cli,
+            "-p",
+            prompt,
+            "--allowedTools",
+            "Read",
+            "Write",
+            "Edit",
+            "Bash(git *)",
+        ]
     env = os.environ.copy()
     env["AGENT_MEMORY_SAVE"] = "1"
     try:
         subprocess.Popen(
-            cmd, env=env, cwd=str(MEMORY_DIR),
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            cmd,
+            env=env,
+            cwd=str(MEMORY_DIR),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
     except (FileNotFoundError, OSError):

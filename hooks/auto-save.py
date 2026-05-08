@@ -108,8 +108,13 @@ def filter_cursor_transcript(lines: list[str]) -> str:
 
 def filter_claude_transcript(lines: list[str]) -> str:
     conversation = []
-    skip_types = {"system", "attachment", "file-history-snapshot",
-                  "last-prompt", "permission-mode"}
+    skip_types = {
+        "system",
+        "attachment",
+        "file-history-snapshot",
+        "last-prompt",
+        "permission-mode",
+    }
     for line in lines:
         try:
             entry = json.loads(line)
@@ -158,8 +163,11 @@ def invoke_extraction(cli: str, prompt: str) -> bool:
         cmd.extend(["--allowedTools", "Write", "Edit", "Bash(git *)"])
     try:
         subprocess.Popen(
-            cmd, env=env, cwd=memory_dir,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            cmd,
+            env=env,
+            cwd=memory_dir,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
         return True
@@ -191,9 +199,7 @@ def main() -> None:
         return
 
     conversation_id = (
-        hook_input.get("conversation_id")
-        or hook_input.get("session_id")
-        or "unknown"
+        hook_input.get("conversation_id") or hook_input.get("session_id") or "unknown"
     )
 
     STATE_DIR.mkdir(parents=True, exist_ok=True)
