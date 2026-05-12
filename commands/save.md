@@ -66,9 +66,9 @@ from ~/agents-memory/formats.md.
 
 ## After writing
 
-1. Git commit the changes:
+1. Git commit the changes (scope to this project only — never `git add -A`):
    ```
-   cd ~/agents-memory && git add -A && git commit -m "save: <project> YYYY-MM-DD"
+   cd ~/agents-memory && git add projects/<project>/ && git commit -m "save: <project> YYYY-MM-DD"
    ```
 2. Report briefly what was saved: "Saved: 2 decisions, 1 learning,
    updated open threads. Committed."

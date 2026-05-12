@@ -274,7 +274,8 @@ def main() -> None:
         f"Follow these instructions:\n\n{save_instructions}\n\n"
         f"Apply them to the following conversation transcript:\n\n"
         f"--- CONVERSATION ---\n{filtered}\n--- END ---\n\n"
-        f"After writing, run: cd {MEMORY_DIR} && git add -A && "
+        f"After writing, run: cd {MEMORY_DIR} && "
+        f"git add projects/{project_name}/ && "
         f'git commit -m "auto-save: {project_name} {today_str}"\n'
     )
 
