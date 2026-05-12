@@ -17,6 +17,11 @@ the formats. Only add, remove, or fix content that is structurally wrong
 (missing fields, wrong format, stale data). Rephrasing correct content is
 not a valid change. If a file is already correct, leave it untouched.
 
+**Index integrity rule:** NEVER remove entries from `projects/index.md`.
+You may update descriptions but the set of project entries must remain
+unchanged. If a project directory exists, its entry must stay in the index.
+Removing an entry is data loss — the project becomes invisible to all agents.
+
 ## Architecture: staging-based pipeline
 
 All consolidation follows this pipeline. Parallelism is only in reading
@@ -191,7 +196,7 @@ Apply the plan. This is the only phase that modifies project memory files.
 1. Normalize (format fixes)
 2. Remove stale threads
 3. Cross-references
-4. Update descriptions (projects/index.md)
+4. Update descriptions (projects/index.md) — update wording only, NEVER remove entries
 5. Hub trimming (extract to separate file + pointer)
 6. Promotions (weekly+)
 7. Archive (monthly)

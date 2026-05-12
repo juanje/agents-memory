@@ -151,8 +151,38 @@ def filter_transcript(path: Path, cli: str, from_line: int = 0) -> str:
     return filter_claude_transcript(lines)
 
 
-def invoke_extraction(cli: str, prompt: str) -> bool:
+def _is_pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except (OSError, ProcessLookupError):
+        return False
+
+
+def _acquire_project_lock(project_name: str) -> bool:
+    """Try to acquire a per-project lock. Returns True if acquired."""
+    lock_file = STATE_DIR / f"{project_name}.lock"
+    if lock_file.exists():
+        try:
+            lock_data = json.loads(lock_file.read_text())
+            pid = lock_data.get("pid", 0)
+            if _is_pid_alive(pid):
+                return False
+        except (json.JSONDecodeError, IOError):
+            pass
+    return True
+
+
+def _write_project_lock(project_name: str, pid: int) -> None:
+    lock_file = STATE_DIR / f"{project_name}.lock"
+    lock_file.write_text(json.dumps({"pid": pid}) + "\n")
+
+
+def invoke_extraction(cli: str, prompt: str, project_name: str) -> bool:
     """Launch extraction agent in background, working inside ~/agents-memory."""
+    if not _acquire_project_lock(project_name):
+        return False
+
     env = os.environ.copy()
     env["AGENT_MEMORY_SAVE"] = "1"
     memory_dir = str(MEMORY_DIR)
@@ -162,7 +192,7 @@ def invoke_extraction(cli: str, prompt: str) -> bool:
     else:
         cmd.extend(["--allowedTools", "Write", "Edit", "Bash(git *)"])
     try:
-        subprocess.Popen(
+        proc = subprocess.Popen(
             cmd,
             env=env,
             cwd=memory_dir,
@@ -170,6 +200,7 @@ def invoke_extraction(cli: str, prompt: str) -> bool:
             stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
+        _write_project_lock(project_name, proc.pid)
         return True
     except (FileNotFoundError, OSError):
         return False
@@ -247,7 +278,7 @@ def main() -> None:
         f'git commit -m "auto-save: {project_name} {today_str}"\n'
     )
 
-    invoke_extraction(platform["cli"], extraction_prompt)
+    invoke_extraction(platform["cli"], extraction_prompt, project_name)
 
     total_lines = len(transcript_path.read_text().splitlines())
     state["last_save_at"] = state["message_count"]

@@ -199,6 +199,14 @@ def compose_context(project_dir: Path, project_name: str) -> str:
     return "\n".join(parts)
 
 
+def _is_pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except (OSError, ProcessLookupError):
+        return False
+
+
 def check_consolidation_due() -> str | None:
     """Return cycle name if consolidation is overdue, else None."""
     state_file = MEMORY_DIR / "hooks" / ".state" / "consolidate.json"
@@ -208,6 +216,11 @@ def check_consolidation_due() -> str | None:
         state = json.loads(state_file.read_text())
     except (json.JSONDecodeError, IOError):
         return "daily"
+
+    running_pid = state.get("running_pid")
+    if running_pid and _is_pid_alive(running_pid):
+        return None
+
     last_run_str = state.get("last_run", "")
     if not last_run_str:
         return "daily"
@@ -252,7 +265,7 @@ def launch_consolidation(cycle: str) -> None:
     env = os.environ.copy()
     env["AGENT_MEMORY_SAVE"] = "1"
     try:
-        subprocess.Popen(
+        proc = subprocess.Popen(
             cmd,
             env=env,
             cwd=str(MEMORY_DIR),
@@ -261,7 +274,16 @@ def launch_consolidation(cycle: str) -> None:
             start_new_session=True,
         )
     except (FileNotFoundError, OSError):
-        pass
+        return
+
+    state_file = MEMORY_DIR / "hooks" / ".state" / "consolidate.json"
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        state = json.loads(state_file.read_text())
+    except (json.JSONDecodeError, IOError, FileNotFoundError):
+        state = {}
+    state["running_pid"] = proc.pid
+    state_file.write_text(json.dumps(state) + "\n")
 
 
 def main() -> None:
