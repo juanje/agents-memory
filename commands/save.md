@@ -26,9 +26,13 @@ Derive the project name from the current workspace directory name.
    (append if exists). Sections: Decisions, Corrections, Learnings, Open
    threads. Skip empty sections.
 2. **Last session** → `~/agents-memory/projects/<project>/last-session.md`
-   (overwrite). 3-5 lines of prose summarizing the most recent day's work.
-   If today's log already has content from earlier saves, read it first and
-   write a combined summary — not just what was processed in this invocation.
+   Supports parallel sessions within the same day:
+   - If the file header date is **today**: **append** a new `## Session` block
+     (use a short timestamp like `HH:MM` to distinguish blocks).
+   - If the file header date is **older** (or the file doesn't exist):
+     **overwrite** with today's date and a single session block.
+   Each session block is 3-5 lines of prose summarizing that session's work.
+   Don't rewrite or merge earlier blocks from the same day — just append yours.
 3. **Open threads** → `~/agents-memory/projects/<project>/open-threads.md`
    (overwrite with current state — merge new threads, remove resolved ones).
 4. **Logs index** → `~/agents-memory/projects/<project>/logs/index.md`

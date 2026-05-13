@@ -51,14 +51,21 @@ projects — not every project the user has.
 
 ## projects/<name>/last-session.md
 
-Overwritten every /save. 3-5 lines max. What happened, key outcome.
+Accumulates session blocks during the day; consolidated overnight.
+Each /save appends a block if the date matches, or overwrites if it's a new day.
 
 ```
 # Last session — YYYY-MM-DD
 
-<3-5 lines of prose. What was done, key decisions, outcome.
-No bullets with "Date:", "Summary:" headers — just concise prose.>
+## Session HH:MM
+<3-5 lines of prose. What was done, key decisions, outcome.>
+
+## Session HH:MM
+<3-5 lines from a parallel session on the same day.>
 ```
+
+After daily /consolidate, the file is rewritten as a single coherent
+summary (no session headers). This is the version injected at session start.
 
 ---
 

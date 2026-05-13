@@ -237,6 +237,10 @@ After all changes are applied:
 3. **Update projects/index.md:** Ensure current one-line descriptions.
 4. **Cross-reference:** Sessions mentioning other projects → Related sections.
 5. **Validate open-threads:** Remove threads resolved in recent logs.
+6. **Consolidate last-session.md:** If the file has multiple `## Session`
+   blocks (from parallel sessions), rewrite as a single coherent 3-5 line
+   summary covering all sessions. Remove the `## Session HH:MM` headers.
+   Use today's log (`logs/YYYY-MM-DD.md`) as source of truth for completeness.
 
 ## Weekly cycle (includes daily)
 
