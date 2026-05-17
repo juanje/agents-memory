@@ -271,7 +271,14 @@ After all changes are applied:
 10. **Archive old logs:** logs >30 days → `logs/archive/YYYY-MM/` with summary.
 11. **Deep generalization:** Stack patterns that should be global? Same
     exception-tracking as weekly step 6 — record which stacks diverge.
-12. **Compact inactive projects:** No sessions in >60 days → trim to essentials.
+12. **Review inactive projects:** No sessions in >60 days → selective review:
+    - **Never compact:** `decisions.md` (highest-value knowledge when
+      returning), `context.md` (has its own compaction rules in step 14),
+      `index.md` (always needed), `latest-sessions.md` (self-managed).
+    - **Flag stale threads:** If `open-threads.md` has threads older than
+      60 days, write a deferred entry to `~/agents-memory/.deferred.md`
+      asking the user to review them. Do not remove threads autonomously.
+    - **Logs:** already handled by step 10 (archive >30 days).
 13. **Prune stale promotions:** Promoted patterns with no recent references → flag.
 14. **Compact context.md:** If the file has grown large, compress old entries:
     remove inline change history older than 3 months (keep only the current
