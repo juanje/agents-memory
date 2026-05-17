@@ -173,6 +173,12 @@ def compose_context(project_dir: Path, project_name: str) -> str:
         parts.append(last_session)
         parts.append("")
 
+    # Project context (architecture, stack details, current state)
+    context = read_file(project_dir / "context.md")
+    if context:
+        parts.append(context)
+        parts.append("")
+
     # Open threads
     open_threads = read_file(project_dir / "open-threads.md")
     if open_threads and "(None" not in open_threads:
