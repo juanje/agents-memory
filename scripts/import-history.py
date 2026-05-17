@@ -257,7 +257,7 @@ def build_extraction_prompt(
     if not save_instructions:
         save_instructions = (
             "Extract decisions, corrections, learnings, and open threads. "
-            "Write to last-session.md, open-threads.md, and logs/."
+            "Write to latest-sessions.md, open-threads.md, and logs/."
         )
 
     return (
@@ -265,7 +265,7 @@ def build_extraction_prompt(
         f"project '{project_name}'. The session date is {session_date} "
         f"(session ID: {session_id}).\n\n"
         f"IMPORTANT: Use {session_date} as the date for log files and "
-        f"last-session.md header — NOT today's date. This is a historical "
+        f"latest-sessions.md entries — NOT today's date. This is a historical "
         f"import.\n\n"
         f"Follow these instructions:\n\n{save_instructions}\n\n"
         f"Apply them to the following conversation transcript:\n\n"

@@ -265,7 +265,7 @@ def main() -> None:
     if not save_instructions:
         save_instructions = (
             "Extract decisions, corrections, learnings, and open threads. "
-            "Write to last-session.md, open-threads.md, and logs/."
+            "Write to latest-sessions.md, open-threads.md, and logs/."
         )
 
     extraction_prompt = (

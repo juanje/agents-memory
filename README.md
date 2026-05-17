@@ -41,7 +41,7 @@ When you open a project, the agent knows what it is, what you did last time, you
 | User corrections           | `projects/<name>/logs/YYYY-MM-DD.md` (append) |
 | Learnings and patterns     | `projects/<name>/logs/YYYY-MM-DD.md` (append) |
 | Open threads               | `projects/<name>/open-threads.md` (overwrite) |
-| Session summary            | `projects/<name>/last-session.md` (overwrite) |
+| Session summary            | `projects/<name>/latest-sessions.md` (prepend, max 3) |
 
 
 It also updates the logs index and commits the changes to git. Only meaningful content gets saved — routine operations, tool calls, and file reads are skipped.
@@ -49,11 +49,25 @@ It also updates the logs index and commits the changes to git. Only meaningful c
 Example — after running `/save`, your project memory might look like:
 
 ```markdown
-# Last session — 2026-05-08
+# Latest sessions
+
+## 2026-05-08 ~16:30
 
 Refactored the upload pipeline to use pre-computed env vars from the CLI
 builder. Fixed path composition when the registry namespace is empty.
 MR reviewed and merge-ready; docs update pending as final step.
+
+> To continue this work, read projects/pac-jobs/logs/2026-05-08.md first.
+
+---
+
+## 2026-05-07 ~11:00
+
+Simplified migration from 5 stages to 2 phases — internal tool, pipeline
+CI is the gating mechanism, no need for gradual rollout. Builder integrated
+as @property (read-only) instead of model_validator to avoid side effects.
+
+> To continue this work, read projects/pac-jobs/logs/2026-05-07.md first.
 ```
 
 ```markdown
@@ -258,7 +272,7 @@ python3 ~/agents-memory/scripts/import-history.py --since 7
 python3 ~/agents-memory/scripts/import-history.py --all
 ```
 
-The script scans `~/.cursor/projects/` and `~/.claude/projects/` for past transcripts, maps them to agents-memory projects, and processes them chronologically through the `/save` extraction pipeline. Each transcript produces a session log, updates last-session and open-threads, and commits.
+The script scans `~/.cursor/projects/` and `~/.claude/projects/` for past transcripts, maps them to agents-memory projects, and processes them chronologically through the `/save` extraction pipeline. Each transcript produces a session log, updates latest-sessions and open-threads, and commits.
 
 After import, run `/consolidate monthly` to normalize formats, cross-reference projects, and promote recurring patterns.
 

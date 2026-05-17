@@ -98,14 +98,14 @@ def create_project(project_name: str, workspace_dir: Path) -> Path:
         "- Team: [ask user]\n"
         "- Last session: (new project)\n\n"
         "Files:\n"
-        "- last-session.md — summary of the most recent session\n"
+        "- latest-sessions.md — summaries of the most recent sessions\n"
         "- open-threads.md — unfinished work, pending questions\n"
         "- logs/index.md — session history\n"
     )
 
     (project_dir / "index.md").write_text(index_content)
-    (project_dir / "last-session.md").write_text(
-        "# Last session\n\n(No sessions recorded yet. Use /save when done.)\n"
+    (project_dir / "latest-sessions.md").write_text(
+        "# Latest sessions\n\n(No sessions recorded yet. Use /save when done.)\n"
     )
     (project_dir / "open-threads.md").write_text("# Open threads\n\n(None yet.)\n")
     (project_dir / "logs" / "index.md").write_text(
@@ -165,8 +165,10 @@ def compose_context(project_dir: Path, project_name: str) -> str:
         parts.append(project_index)
         parts.append("")
 
-    # Last session
-    last_session = read_file(project_dir / "last-session.md")
+    # Latest sessions (new name, fallback to old for migration)
+    last_session = read_file(project_dir / "latest-sessions.md")
+    if not last_session:
+        last_session = read_file(project_dir / "last-session.md")
     if last_session and "No sessions recorded" not in last_session:
         parts.append(last_session)
         parts.append("")

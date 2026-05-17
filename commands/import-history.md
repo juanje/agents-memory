@@ -36,7 +36,7 @@ python3 ~/agents-memory/scripts/import-history.py --cli claude
 3. Sorts chronologically (oldest first — so later sessions override earlier)
 4. For each transcript: filters to user+assistant text, feeds it to the
    /save extraction pipeline via CLI (`agent -p` or `claude -p`)
-5. Each extraction produces a dated log + updates last-session.md + open-threads.md
+5. Each extraction produces a dated log + updates latest-sessions.md + open-threads.md
 
 ## After import
 

@@ -25,14 +25,22 @@ Derive the project name from the current workspace directory name.
 1. **Session log** → `~/agents-memory/projects/<project>/logs/YYYY-MM-DD.md`
    (append if exists). Sections: Decisions, Corrections, Learnings, Open
    threads. Skip empty sections.
-2. **Last session** → `~/agents-memory/projects/<project>/last-session.md`
-   Supports parallel sessions within the same day:
-   - If the file header date is **today**: **append** a new `## Session` block
-     (use a short timestamp like `HH:MM` to distinguish blocks).
-   - If the file header date is **older** (or the file doesn't exist):
-     **overwrite** with today's date and a single session block.
-   Each session block is 3-5 lines of prose summarizing that session's work.
-   Don't rewrite or merge earlier blocks from the same day — just append yours.
+2. **Latest sessions** → `~/agents-memory/projects/<project>/latest-sessions.md`
+   Rolling window of the 3 most recent session summaries (LIFO order):
+   - Read the current file (if it exists).
+   - Prepend a new section at the top with: `## YYYY-MM-DD ~HH:MM` header,
+     4-6 lines of prose covering what the session was about, what was done
+     and why, key decisions with reasoning, and what's still pending. Write
+     enough that a future agent can understand where things stand without
+     reading the full log.
+   - Add a blockquote after the summary:
+     `> To continue this work, read projects/<project>/logs/YYYY-MM-DD.md first.`
+   - Add a `---` separator between sections.
+   - If the file now has more than 3 session sections, remove the oldest
+     (bottom) one.
+   **Migration:** If `last-session.md` exists but `latest-sessions.md` doesn't,
+   read the old file, convert its content into the oldest session entry in the
+   new file, write `latest-sessions.md`, and delete `last-session.md`.
 3. **Open threads** → `~/agents-memory/projects/<project>/open-threads.md`
    (overwrite with current state — merge new threads, remove resolved ones).
 4. **Logs index** → `~/agents-memory/projects/<project>/logs/index.md`

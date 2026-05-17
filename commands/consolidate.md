@@ -45,7 +45,7 @@ ASSESS → ANALYZE (per project) → PLAN → EXECUTE → COMMIT → CLEAN UP
 
 | Cycle | Read | Don't read |
 |-------|------|-----------|
-| Daily | Project info files (index.md, last-session.md, open-threads.md), logs from today/yesterday, formats.md | Archived logs, full stack/team files (unless promoting) |
+| Daily | Project info files (index.md, latest-sessions.md, open-threads.md), logs from today/yesterday, formats.md | Archived logs, full stack/team files (unless promoting) |
 | Weekly | Same as daily + all logs from the current week, stack index files | Monthly archives, logs older than 7 days |
 | Monthly | Same as weekly + all logs from the month, full stack and team files | Logs older than current month (already archived) |
 
@@ -91,7 +91,7 @@ analysis in working memory.
 
 **What to analyze:**
 
-- Read the project's `index.md`, `last-session.md`, `open-threads.md`.
+- Read the project's `index.md`, `latest-sessions.md`, `open-threads.md`.
 - Read `logs/index.md` to identify recent sessions.
 - Read relevant session logs (per cycle scope).
 - Compare all files against `formats.md`.
@@ -237,10 +237,12 @@ After all changes are applied:
 3. **Update projects/index.md:** Ensure current one-line descriptions.
 4. **Cross-reference:** Sessions mentioning other projects → Related sections.
 5. **Validate open-threads:** Remove threads resolved in recent logs.
-6. **Consolidate last-session.md:** If the file has multiple `## Session`
-   blocks (from parallel sessions), rewrite as a single coherent 3-5 line
-   summary covering all sessions. Remove the `## Session HH:MM` headers.
-   Use today's log (`logs/YYYY-MM-DD.md`) as source of truth for completeness.
+6. **Validate latest-sessions.md:** Check that the file follows the format
+   in formats.md (max 3 sections, each with summary + blockquote log
+   reference). Fix format issues only — do not rewrite content or merge
+   sections. This file is self-managed by /save, not by consolidation.
+   **Migration:** If `last-session.md` exists but `latest-sessions.md`
+   doesn't, rename the file and reformat to match the new format.
 
 ## Weekly cycle (includes daily)
 

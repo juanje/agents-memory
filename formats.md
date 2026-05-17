@@ -38,7 +38,7 @@ cross-session knowledge (decisions, patterns learned, relationships).
 
 ## Files
 
-- last-session.md — summary of the most recent session
+- latest-sessions.md — summaries of the most recent sessions
 - open-threads.md — unfinished work, pending questions
 - logs/index.md — session history
 ```
@@ -49,23 +49,48 @@ projects — not every project the user has.
 
 ---
 
-## projects/<name>/last-session.md
+## projects/<name>/latest-sessions.md
 
-Accumulates session blocks during the day; consolidated overnight.
-Each /save appends a block if the date matches, or overwrites if it's a new day.
+Rolling window of the 3 most recent session summaries. Self-managed by
+/save — the daily cycle does NOT rewrite or merge this file, only validates
+its format.
+
+Each /save prepends a new section at the top. If > 3 sections, the oldest
+(bottom) is removed. Each section answers: what was the session about, what
+was done and why, what decisions were made, what's still pending.
 
 ```
-# Last session — YYYY-MM-DD
+# Latest sessions
 
-## Session HH:MM
-<3-5 lines of prose. What was done, key decisions, outcome.>
+## YYYY-MM-DD ~HH:MM
 
-## Session HH:MM
-<3-5 lines from a parallel session on the same day.>
+<4-6 lines of prose. What the session was about, what was done and why,
+key decisions with reasoning, what was left pending. Enough context for
+an agent to understand where things stand without reading the full log.>
+
+> To continue this work, read projects/<name>/logs/YYYY-MM-DD.md first.
+
+---
+
+## YYYY-MM-DD ~HH:MM
+
+<previous session summary>
+
+> To continue this work, read projects/<name>/logs/YYYY-MM-DD.md first.
 ```
 
-After daily /consolidate, the file is rewritten as a single coherent
-summary (no session headers). This is the version injected at session start.
+Empty state (detected by session-start as "nothing to show"):
+
+```
+# Latest sessions
+
+(No sessions recorded yet. Use /save when done.)
+```
+
+**Migration from last-session.md:** If `last-session.md` exists but
+`latest-sessions.md` doesn't, the first /save reads the old file,
+converts its content into the oldest entry in the new format, writes
+`latest-sessions.md`, and deletes `last-session.md`.
 
 ---
 
