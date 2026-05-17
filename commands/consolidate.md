@@ -45,7 +45,7 @@ ASSESS → ANALYZE (per project) → PLAN → EXECUTE → COMMIT → CLEAN UP
 
 | Cycle | Read | Don't read |
 |-------|------|-----------|
-| Daily | Project info files (index.md, latest-sessions.md, open-threads.md), logs from today/yesterday, formats.md | Archived logs, full stack/team files (unless promoting) |
+| Daily | Project info files (index.md, latest-sessions.md, open-threads.md, context.md), logs from today/yesterday, formats.md | Archived logs, full stack/team files (unless promoting) |
 | Weekly | Same as daily + all logs from the current week, stack index files | Monthly archives, logs older than 7 days |
 | Monthly | Same as weekly + all logs from the month, full stack and team files | Logs older than current month (already archived) |
 
@@ -91,7 +91,7 @@ analysis in working memory.
 
 **What to analyze:**
 
-- Read the project's `index.md`, `latest-sessions.md`, `open-threads.md`.
+- Read the project's `index.md`, `latest-sessions.md`, `open-threads.md`, `context.md`.
 - Read `logs/index.md` to identify recent sessions.
 - Read relevant session logs (per cycle scope).
 - Compare all files against `formats.md`.
@@ -243,6 +243,15 @@ After all changes are applied:
    sections. This file is self-managed by /save, not by consolidation.
    **Migration:** If `last-session.md` exists but `latest-sessions.md`
    doesn't, rename the file and reformat to match the new format.
+7. **Enrich context.md (append-only):** Read recent logs and compare
+   against `context.md`. Apply the three rules from formats.md:
+   - **Add** new information with `(learned YYYY-MM-DD)` marker.
+   - **Do not change or remove** existing valid content.
+   - **Update only with explicit log evidence** of a change (migration,
+     removal, replacement). Keep the previous state inline:
+     `<new state> (changed YYYY-MM-DD — was <old state>, <reason>)`.
+   If `context.md` doesn't exist yet, create it from recent logs following
+   the format in formats.md.
 
 ## Weekly cycle (includes daily)
 
@@ -258,3 +267,7 @@ After all changes are applied:
 11. **Deep generalization:** Stack patterns that should be global?
 12. **Compact inactive projects:** No sessions in >60 days → trim to essentials.
 13. **Prune stale promotions:** Promoted patterns with no recent references → flag.
+14. **Compact context.md:** If the file has grown large, compress old entries:
+    remove inline change history older than 3 months (keep only the current
+    state), consolidate related entries. The original logs exist as backup
+    for anything removed.

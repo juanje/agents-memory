@@ -94,6 +94,50 @@ converts its content into the oldest entry in the new format, writes
 
 ---
 
+## projects/<name>/context.md
+
+Project context: architecture, stack, key components, current state.
+Append-only during daily consolidation — the daily cycle only adds new
+information, never rewrites or removes existing content. Monthly may
+compact old entries.
+
+**Update rules for daily consolidation:**
+
+1. **Add** new information from recent logs with a date marker:
+   `(learned YYYY-MM-DD)`. New components, dependencies, integrations,
+   architectural details.
+2. **Do not change or remove** existing content that is still valid,
+   even if the wording could be improved. Stability > prose quality.
+3. **Change or remove only with explicit evidence** from a log: "stopped
+   using X", "migrated from A to B", "removed module Y". When updating,
+   keep the previous state inline with the change date and reason:
+   `Migrations: alembic (changed 2026-05-17 — was raw SQL, switched after stabilizing schema)`
+
+**Monthly compaction:** When the file grows too large, the monthly cycle
+may compress old entries (remove inline change history older than 3
+months, consolidate related entries). The original logs exist as backup.
+
+```
+# Context — <project-name>
+
+## Architecture
+
+- <Component or layer> — <what it does> (learned YYYY-MM-DD)
+- <Another component> (learned YYYY-MM-DD)
+
+## Stack
+
+- FastAPI + SQLAlchemy + PostgreSQL (learned 2026-04-15)
+- Migrations: alembic (changed 2026-05-17 — was raw SQL, switched after stabilizing schema)
+- ruff for linting (learned 2026-04-15)
+
+## Current state
+
+- <What's deployed, what's in progress> (learned YYYY-MM-DD)
+```
+
+---
+
 ## projects/<name>/open-threads.md
 
 Overwritten every /save (merge new, remove resolved).
