@@ -256,15 +256,21 @@ After all changes are applied:
 ## Weekly cycle (includes daily)
 
 6. **Cross-project patterns:** Same decision in 2+ projects of same stack
-   → promote to stacks/<stack>/index.md.
+   → promote to stacks/<stack>/index.md. When promoting, also check for
+   projects of the same stack where the pattern was explicitly rejected or
+   a different approach was chosen. Record both in the promoted entry:
+   `Applies to: <projects>` and `Does not apply to: <project> (<alternative>
+   — <reason>, decided YYYY-MM-DD)`. See formats.md for the full format.
 7. **Stack enrichment:** Generalizable learnings → stack files.
 8. **Team updates:** New conventions across a team → teams/<team>/index.md.
+   Same exception-tracking rule as step 6 applies to team-level promotions.
 9. **Flag stale projects:** No sessions in >30 days → note in commit message.
 
 ## Monthly cycle (includes weekly)
 
 10. **Archive old logs:** logs >30 days → `logs/archive/YYYY-MM/` with summary.
-11. **Deep generalization:** Stack patterns that should be global?
+11. **Deep generalization:** Stack patterns that should be global? Same
+    exception-tracking as weekly step 6 — record which stacks diverge.
 12. **Compact inactive projects:** No sessions in >60 days → trim to essentials.
 13. **Prune stale promotions:** Promoted patterns with no recent references → flag.
 14. **Compact context.md:** If the file has grown large, compress old entries:

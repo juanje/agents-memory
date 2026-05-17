@@ -204,6 +204,10 @@ Session log. Appended if multiple /save on the same day. Skip empty sections.
 
 Standards for this language/platform. Grows over time via /save promotions.
 
+When promoting a pattern from project to stack level, record both where
+it applies and where it doesn't. Exceptions prevent the agent from
+blindly applying a standard to a project that explicitly rejected it.
+
 ```
 # Stack: <name>
 
@@ -212,13 +216,19 @@ Standards for this language/platform. Grows over time via /save promotions.
 ## Key standards
 
 - <Standard and tool> (not <alternative>)
+  Applies to: <project-a>, <project-b>, <project-c>
+  Does not apply to: <project-d> (<alternative> — <reason>, decided YYYY-MM-DD)
 - ...
 
 ## Patterns
 
 - <Pattern: library or approach used>
+  Applies to: <project-a>, <project-b>
 - ...
 ```
+
+The "Does not apply to" line is only needed when a project of this stack
+explicitly uses a different approach. If no exceptions exist, omit it.
 
 ---
 
