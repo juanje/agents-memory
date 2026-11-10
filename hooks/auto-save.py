@@ -2,7 +2,7 @@
 """
 auto-save.py — Auto-save hook for agents-memory.
 
-Triggered by: sessionEnd/Stop (always), afterAgentResponse (with threshold).
+Triggered by: SessionEnd/PreCompact (always), Stop (with threshold).
 Reads the conversation transcript, filters to user+assistant text, and
 invokes the platform CLI to extract memory into project files.
 
@@ -190,7 +190,7 @@ def invoke_extraction(cli: str, prompt: str, project_name: str) -> bool:
     if cli == "agent":
         cmd.extend(["--workspace", memory_dir, "--force"])
     else:
-        cmd.extend(["--allowedTools", "Write", "Edit", "Bash(git *)"])
+        cmd.extend(["--allowedTools", "Read", "Write", "Edit", "Bash(git *)"])
     try:
         proc = subprocess.Popen(
             cmd,
@@ -229,16 +229,18 @@ def main() -> None:
     if transcript_mtime < today:
         return
 
-    conversation_id = (
-        hook_input.get("conversation_id") or hook_input.get("session_id") or "unknown"
+    session_id = (
+        hook_input.get("session_id")
+        or hook_input.get("conversation_id")
+        or "unknown"
     )
 
     STATE_DIR.mkdir(parents=True, exist_ok=True)
-    state_file = STATE_DIR / f"{conversation_id}.json"
+    state_file = STATE_DIR / f"{session_id}.json"
     state = load_state(state_file)
 
-    periodic_events = {"afterAgentResponse", "Stop"}
-    forced_events = {"sessionEnd", "SessionEnd", "preCompact", "PreCompact"}
+    periodic_events = {"Stop", "stop", "afterAgentResponse"}
+    forced_events = {"SessionEnd", "sessionEnd", "PreCompact", "preCompact"}
     is_periodic = hook_event in periodic_events
     is_forced = hook_event in forced_events
 
