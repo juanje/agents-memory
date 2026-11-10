@@ -1,6 +1,9 @@
 # Staging area for consolidation pipeline (ephemeral manifests)
 .staging/
 
+# Hook runtime locks (PID files)
+hooks/.state/*.lock
+
 # Python
 __pycache__/
 *.pyc
