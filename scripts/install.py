@@ -422,6 +422,8 @@ def uninstall_cursor_hooks(dry_run: bool) -> None:
 def install_commands(dry_run: bool) -> None:
     platforms = detect_platforms()
     for platform, commands_dir in platforms.items():
+        if platform == "pi":
+            continue
         commands_dir.mkdir(parents=True, exist_ok=True) if not dry_run else None
         for cmd in COMMANDS:
             target = INSTANCE_DIR / "commands" / cmd
@@ -444,6 +446,8 @@ def install_commands(dry_run: bool) -> None:
 def uninstall_commands(dry_run: bool) -> None:
     platforms = detect_platforms()
     for platform, commands_dir in platforms.items():
+        if platform == "pi":
+            continue
         for cmd in COMMANDS:
             link = commands_dir / cmd
             if link.is_symlink():
@@ -454,14 +458,63 @@ def uninstall_commands(dry_run: bool) -> None:
                         link.unlink()
 
 
+def install_pi_extension(dry_run: bool) -> None:
+    """Install pi-agents-memory via pi CLI."""
+    try:
+        result = subprocess.run(
+            ["pi", "list"], capture_output=True, text=True, timeout=10
+        )
+        installed = "pi-agents-memory" in result.stdout
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        log("pi: CLI not found, skipping extension install")
+        return
+
+    if installed:
+        log("pi: extension already installed")
+        return
+
+    log("pi: install pi-agents-memory extension")
+    if not dry_run:
+        subprocess.run(
+            ["pi", "install", "npm:pi-agents-memory"],
+            capture_output=True, timeout=60,
+        )
+
+
+def uninstall_pi_extension(dry_run: bool) -> None:
+    """Remove pi-agents-memory via pi CLI."""
+    try:
+        result = subprocess.run(
+            ["pi", "list"], capture_output=True, text=True, timeout=10
+        )
+        installed = "pi-agents-memory" in result.stdout
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        log("pi: CLI not found, skipping")
+        return
+
+    if not installed:
+        log("pi: extension not installed")
+        return
+
+    log("pi: remove pi-agents-memory extension")
+    if not dry_run:
+        subprocess.run(
+            ["pi", "remove", "pi-agents-memory"],
+            capture_output=True, timeout=60,
+        )
+
+
 def detect_platforms() -> dict[str, Path]:
     platforms = {}
     claude_dir = Path.home() / ".claude" / "commands"
     cursor_dir = Path.home() / ".cursor" / "commands"
+    pi_dir = Path.home() / ".pi" / "agent"
     if claude_dir.parent.exists():
         platforms["claude-code"] = claude_dir
     if cursor_dir.parent.exists():
         platforms["cursor"] = cursor_dir
+    if pi_dir.exists():
+        platforms["pi"] = pi_dir
     return platforms
 
 
@@ -487,6 +540,8 @@ def main() -> None:
                 uninstall_claude_hooks(args.dry_run)
             elif platform == "cursor":
                 uninstall_cursor_hooks(args.dry_run)
+            elif platform == "pi":
+                uninstall_pi_extension(args.dry_run)
         uninstall_commands(args.dry_run)
         print("\nDone. Hooks and symlinks removed.")
         print(f"Instance directory left in place: {INSTANCE_DIR}")
@@ -519,7 +574,7 @@ def main() -> None:
     print()
     platforms = detect_platforms()
     if not platforms:
-        print("No supported platforms found (~/.claude or ~/.cursor).")
+        print("No supported platforms found (~/.claude, ~/.cursor, or ~/.pi).")
     else:
         print(f"Configuring platforms: {', '.join(platforms)}...\n")
         for platform in platforms:
@@ -527,6 +582,8 @@ def main() -> None:
                 install_claude_hooks(args.dry_run)
             elif platform == "cursor":
                 install_cursor_hooks(args.dry_run)
+            elif platform == "pi":
+                install_pi_extension(args.dry_run)
         install_commands(args.dry_run)
 
     print("\nDone." + (" Start a new conversation to verify." if is_new else ""))
