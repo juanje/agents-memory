@@ -93,11 +93,11 @@ as @property (read-only) instead of model_validator to avoid side effects.
 **Auto-save (safety net):** Even if you forget to `/save`, the auto-save hook captures your work automatically:
 
 
-| Trigger        | When                                                          | Behavior                                  |
-| -------------- | ------------------------------------------------------------- | ----------------------------------------- |
-| Session end    | Session closes (`sessionEnd` / `SessionEnd`)                  | Always saves                              |
-| Pre-compaction | Context window fills up (`preCompact` / `PreCompact`)         | Always saves                              |
-| Periodic       | After every N agent responses (`afterAgentResponse` / `Stop`) | Only when threshold reached (default: 10) |
+| Trigger        | Claude Code event    | Cursor event          | Behavior                                  |
+| -------------- | -------------------- | --------------------- | ----------------------------------------- |
+| Session end    | `SessionEnd`         | `sessionEnd`          | Always saves                              |
+| Pre-compaction | `PreCompact`         | `preCompact`          | Always saves                              |
+| Periodic       | `Stop`               | `afterAgentResponse`  | Only when threshold reached (default: 10) |
 
 
 The auto-save reads the conversation transcript, filters out noise (tool calls, file reads), and launches a headless agent in the background to extract memory — using the same instructions as `/save`. It's lower fidelity than a manual `/save` (no in-session context), but captures something vs. nothing.
@@ -130,93 +130,40 @@ Each cycle includes all previous ones. Safe to run multiple times. Use `/consoli
 
 ## Setup
 
-### Quick setup (paste this to your agent)
+### Install
 
-Copy the section below and paste it into a Cursor or claude-code conversation. The agent will configure everything.
-
----
-
-**Setup prompt:**
-
-```
-Set up agents-memory for me. Follow these steps exactly:
-
-1. Clone the repo (if not already present):
-   git clone https://github.com/juanje/agents-memory ~/agents-memory
-
-2. Verify python3 is available (version 3.9+).
-
-3. Configure hooks:
-   - For Cursor: Add this to ~/.cursor/hooks.json (create if doesn't exist):
-     {
-       "version": 1,
-       "hooks": {
-         "sessionStart": [
-           {"command": "python3 ~/agents-memory/hooks/session-start.py"}
-         ],
-         "afterAgentResponse": [
-           {"command": "python3 ~/agents-memory/hooks/auto-save.py", "timeout": 30}
-         ],
-         "preCompact": [
-           {"command": "python3 ~/agents-memory/hooks/auto-save.py", "timeout": 30}
-         ],
-         "sessionEnd": [
-           {"command": "python3 ~/agents-memory/hooks/auto-save.py", "timeout": 30}
-         ]
-       }
-     }
-   - For claude-code: Add these to ~/.claude/settings.json under "hooks":
-     "SessionStart": [{"matcher": "startup|resume", "hooks": [
-       {"type": "command", "command": "python3 /FULL/PATH/TO/agents-memory/hooks/session-start.py"}
-     ]}],
-     "Stop": [{"matcher": "", "hooks": [
-       {"type": "command", "command": "python3 /FULL/PATH/TO/agents-memory/hooks/auto-save.py"}
-     ]}],
-     "PreCompact": [{"matcher": "", "hooks": [
-       {"type": "command", "command": "python3 /FULL/PATH/TO/agents-memory/hooks/auto-save.py"}
-     ]}],
-     "SessionEnd": [{"matcher": "", "hooks": [
-       {"type": "command", "command": "python3 /FULL/PATH/TO/agents-memory/hooks/auto-save.py", "timeout": 10}
-     ]}]
-     IMPORTANT: Use the full absolute path (not ~) for claude-code.
-
-4. Symlink commands globally:
-   - Cursor:
-     ln -s ~/agents-memory/commands/save.md ~/.cursor/commands/save.md
-     ln -s ~/agents-memory/commands/consolidate.md ~/.cursor/commands/consolidate.md
-     ln -s ~/agents-memory/commands/import-history.md ~/.cursor/commands/import-history.md
-   - claude-code:
-     ln -s ~/agents-memory/commands/save.md ~/.claude/commands/save.md
-     ln -s ~/agents-memory/commands/consolidate.md ~/.claude/commands/consolidate.md
-     ln -s ~/agents-memory/commands/import-history.md ~/.claude/commands/import-history.md
-
-5. Verify: Start a new conversation in any project. You should see
-   project context loaded automatically at the beginning.
+```bash
+git clone https://github.com/juanje/agents-memory /tmp/agents-memory-src
+python3 /tmp/agents-memory-src/scripts/install.py
 ```
 
-> **Note:** The default location is `~/agents-memory/`. If you clone elsewhere, set the `AGENT_MEMORY_DIR` environment variable and adjust the hook paths in the JSON configs accordingly.
+This creates `~/agents-memory/` as an independent instance (its own git repo,
+no shared remote with the source). It copies code files (hooks, scripts,
+commands), scaffolds the data structure, and configures platform hooks and
+command symlinks.
 
----
+> **Note:** The default location is `~/agents-memory/`. Set the
+> `AGENT_MEMORY_DIR` environment variable before running the script to use
+> a different path.
 
-### Manual setup
+### Update
 
-If you prefer to set it up yourself:
+```bash
+cd /tmp/agents-memory-src && git pull
+python3 scripts/install.py
+```
 
-1. Clone this repo:
-  ```bash
-   git clone https://github.com/juanje/agents-memory ~/agents-memory
-  ```
-2. Configure hooks — sessionStart for context injection, plus auto-save hooks for afterAgentResponse, preCompact, and sessionEnd (see setup prompt above for the exact JSON for both Cursor and claude-code).
-3. Symlink commands:
-  ```bash
-   ln -s ~/agents-memory/commands/save.md ~/.cursor/commands/save.md
-   ln -s ~/agents-memory/commands/consolidate.md ~/.cursor/commands/consolidate.md
-   ln -s ~/agents-memory/commands/import-history.md ~/.cursor/commands/import-history.md
-   ln -s ~/agents-memory/commands/save.md ~/.claude/commands/save.md
-   ln -s ~/agents-memory/commands/consolidate.md ~/.claude/commands/consolidate.md
-   ln -s ~/agents-memory/commands/import-history.md ~/.claude/commands/import-history.md
-  ```
-4. Start a new conversation — context should load automatically.
+Re-running the script updates code files in the instance and commits the
+changes — project data is never touched. Use `--dry-run` to preview.
+
+### Uninstall
+
+```bash
+python3 ~/agents-memory/scripts/install.py --uninstall
+```
+
+Removes hooks and command symlinks. The instance directory is left in place
+so you don't lose data.
 
 ## Memory structure
 
@@ -237,15 +184,8 @@ A project's `index.md` declares its stack and team. The sessionStart hook compos
 
 Already have weeks of coding sessions in Cursor or claude-code? Import them to bootstrap your memory instead of starting from zero.
 
-**Option A: Use the command (recommended)** — let the agent handle it:
-
-```bash
-# Add the command symlink (one-time, during setup):
-ln -s ~/agents-memory/commands/import-history.md ~/.cursor/commands/import-history.md
-ln -s ~/agents-memory/commands/import-history.md ~/.claude/commands/import-history.md
-```
-
-Then tell your agent in natural language:
+**Option A: Use the command (recommended)** — the install script already
+symlinked the commands, so just tell your agent:
 
 ```
 /import-history from the last two weeks for my-api and my-cli
