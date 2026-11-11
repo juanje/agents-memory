@@ -1,6 +1,6 @@
 # agents-memory
 
-Persistent, cross-session memory for AI coding agents. Works with Cursor and claude-code.
+Persistent, cross-session memory for AI coding agents. Works with Cursor, claude-code and Pi.
 
 When you open a project, the agent knows what it is, what you did last time, your standards for that stack, and how your team works — without you repeating anything.
 
